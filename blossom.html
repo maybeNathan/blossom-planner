@@ -278,6 +278,8 @@ function showSuggestions(query) {
   var matches = availableWords.filter(function(w) {
     if (w.startsWith(query) === false) return false;
     if (state.words.includes(w)) return false;
+    // Must contain center letter
+    if (state.center && w.indexOf(state.center) === -1) return false;
     // Check word can actually be formed from allowed letters
     var needed = {};
     for (var j = 0; j < w.length; j++) {
@@ -454,7 +456,11 @@ function renderWords() {
 
 function getWordScore(word) {
   var len = word.length;
-  return len <= 4 ? 1 : (len <= 5 ? 5 : len);
+  if (len <= 4) return 2;
+  if (len === 5) return 4;
+  if (len === 6) return 6;
+  if (len === 7) return 12;
+  return 12 + (len - 7) * 3;
 }
 
 function addWordToNextSlot(wordIdx) {
@@ -596,33 +602,40 @@ function renderSelection() {
 function calculateScore() {
   var total = 0;
   var bonusTotal = 0;
+  var pangramCount = 0;
+  var allLetters = state.center + state.outer.filter(function(l){return l;}).join('');
+  var uniqueLetters = new Set(allLetters.split(''));
+  
   for (var key in state.selection) {
     if (state.selection.hasOwnProperty(key)) {
       var sel = state.selection[key];
       for (var i = 0; i < sel.length; i++) {
         var w = sel[i].word;
-        var len = w.length;
-        var wordScore = len <= 4 ? 1 : (len <= 5 ? 5 : len);
-        total += wordScore;
-        // Bonus
+        total += getWordScore(w);
+        // Bonus points for letter occurrences
         for (var j = 0; j < w.length; j++) {
           if (state.bonusCount[w[j]]) bonusTotal += state.bonusCount[w[j]];
         }
-        // Pangram
-        if (w.indexOf(state.center) !== -1) {
-          var hasAll = true;
-          var centerSet = new Set(state.center);
-          for (var k = 0; k < w.length; k++) centerSet.add(w[k]);
-          if (centerSet.size === state.center.length + state.outer.filter(function(l){return l;}).length) {
-            wordScore += 7;
-          }
+        // Pangram check: word uses all 7 unique letters
+        var wordLetters = new Set(w.split(''));
+        var isPangram = true;
+        for (var c of uniqueLetters) {
+          if (!wordLetters.has(c)) { isPangram = false; break; }
+        }
+        if (isPangram) {
+          pangramCount++;
+          total += 7;
         }
       }
     }
   }
   total += bonusTotal;
   var html = '<div class="score-display">Score: ' + total + '</div>';
-  html += '<div class="score-details">Base: ' + (total - bonusTotal) + ' | Bonus: <span>+' + bonusTotal + '</span></div>';
+  html += '<div class="score-details">';
+  html += 'Word points: <span>' + (total - bonusTotal - (pangramCount * 7)) + '</span> | ';
+  html += 'Bonus petals: <span>+' + bonusTotal + '</span> | ';
+  html += 'Pangrams: <span>' + pangramCount + '</span>';
+  html += '</div>';
   return total;
 }
 
