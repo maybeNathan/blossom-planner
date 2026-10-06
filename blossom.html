@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Blossom Planner</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%);color:#e0e0e0;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:20px}
+h1{font-size:2.5rem;margin-bottom:20px;background:linear-gradient(135deg,#a8e6cf,#88d8b0);-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-align:center}
+.container{display:flex;gap:20px;max-width:1400px;width:100%;margin-top:20px}
+section{background:rgba(255,255,255,.05);border-radius:12px;padding:20px;border:1px solid rgba(255,255,255,.1);flex:1;overflow-y:auto;max-height:calc(100vh - 180px)}
+h2{font-size:1.3rem;margin-bottom:15px;color:#a8e6cf;border-bottom:2px solid #88d8b0;padding-bottom:8px}
+h3{font-size:1.1rem;margin:15px 0 10px;color:#88d8b0}
+.input-group{display:flex;gap:10px;margin-bottom:15px;flex-wrap:wrap}
+input[type="text"]{padding:10px;border:2px solid #88d8b0;border-radius:8px;background:rgba(255,255,255,.1);color:#fff;font-size:1rem;flex:1;min-width:150px}
+input[type="text"]::placeholder{color:rgba(255,255,255,.4)}
+input[type="text"]:focus{outline:none;border-color:#a8e6cf;box-shadow:0 0 0 3px rgba(168,230,207,.2)}
+textarea{padding:10px;border:2px solid #88d8b0;border-radius:8px;background:rgba(255,255,255,.1);color:#fff;font-size:1rem;width:100%;min-height:60px;resize:vertical;font-family:monospace}
+textarea:focus{outline:none;border-color:#a8e6cf;box-shadow:0 0 0 3px rgba(168,230,207,.2)}
+button{padding:10px 16px;border:none;border-radius:8px;background:linear-gradient(135deg,#a8e6cf,#88d8b0);color:#1a1a2e;font-weight:700;cursor:pointer;transition:transform .1s,box-shadow .2s;font-size:.95rem}
+button:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(168,230,207,.3)}
+button:active{transform:translateY(0)}
+.btn-secondary{background:linear-gradient(135deg,#6c5ce7,#a29bfe);color:#fff}
+.btn-danger{background:linear-gradient(135deg,#ff7675,#d63031);color:#fff}
+.btn-warning{background:linear-gradient(135deg,#f39c12,#e67e22);color:#fff}
+.word-item{padding:12px;margin-bottom:8px;background:rgba(255,255,255,.08);border-radius:8px;cursor:default;display:flex;justify-content:space-between;align-items:center;gap:8px;border:1px solid rgba(255,255,255,.1);transition:background .15s}
+.word-item:hover{background:rgba(255,255,255,.15)}
+.word-item.selected{border-color:#a8e6cf;background:rgba(168,230,207,.1)}
+.word-item .word-text{flex:1;font-weight:500}
+.word-item .word-actions{display:flex;gap:6px}
+.word-item .delete-btn{background:none;color:#ff7675;font-size:1.2rem;padding:2px 6px;border:none;cursor:pointer;border-radius:4px;line-height:1}
+.word-item .delete-btn:hover{background:rgba(255,118,117,.2)}
+.word-item .score-tag{font-size:.75rem;color:#ffd700;margin-right:4px}
+.suggestions-box{position:absolute;background:#1e2a3a;border:2px solid #a8e6cf;border-radius:8px;max-height:200px;overflow-y:auto;z-index:1000;width:100%;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+.suggestion-item{padding:10px 12px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.05);transition:background .1s}
+.suggestion-item:hover,.suggestion-item.active{background:rgba(168,230,207,.15)}
+.drop-zone{border:2px dashed rgba(255,255,255,.2);border-radius:10px;padding:10px;min-height:60px;display:flex;align-items:center;justify-content:center;margin-bottom:8px;transition:all .15s}
+.drop-zone.drag-over{border-color:#a8e6cf;background:rgba(168,230,207,.1);transform:scale(1.02)}
+.drop-zone.filled{border-style:solid;border-color:rgba(168,230,207,.5);background:rgba(168,230,207,.05)}
+.drop-zone .slot-text{color:rgba(255,255,255,.5);font-size:.9rem}
+.selection-list{display:flex;flex-direction:column;gap:8px}
+.selection-empty{color:rgba(255,255,255,.4);text-align:center;padding:30px;font-style:italic}
+.petal-section{border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:10px;margin-bottom:8px}
+.petal-label{font-size:1.4rem;font-weight:700;text-align:center;margin-bottom:8px;background:linear-gradient(135deg,#ffd700,#ffaa00);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.petal-slots{display:flex;gap:8px}
+.petal-slot{flex:1;border:2px dashed rgba(255,255,255,.2);border-radius:8px;padding:8px;min-height:40px;display:flex;align-items:center;justify-content:center;transition:all .15s;position:relative}
+.petal-slot.drag-over{border-color:#ffd700;background:rgba(255,215,0,.08)}
+.petal-slot.filled{border-style:solid;border-color:rgba(255,215,0,.4);background:rgba(255,215,0,.05)}
+.petal-slot .word-text{font-size:.85rem;flex:1;font-weight:500}
+.petal-slot .delete-btn{background:none;color:#ff7675;font-size:1rem;padding:2px 4px;border:none;cursor:pointer;border-radius:3px;position:absolute;top:4px;right:4px;line-height:1}
+.petal-slot .delete-btn:hover{background:rgba(255,118,117,.2)}
+.score-summary{margin-top:15px;padding:15px;background:rgba(168,230,207,.1);border-radius:8px;border-left:4px solid #a8e6cf}
+.score-display{font-size:2rem;font-weight:700;color:#a8e6cf;text-align:center;margin:10px 0}
+.score-details{font-size:.9rem;color:rgba(255,255,255,.7);line-height:1.6}
+.score-details span{color:#ffd700;font-weight:600}
+.dict-toggle{margin-top:10px;font-size:.85rem;padding:8px 12px}
+.dict-panel{display:none;margin-top:10px}
+.dict-panel.open{display:block}
+.dict-search{width:100%;padding:8px;margin-bottom:10px;border:1px solid rgba(255,255,255,.2);border-radius:6px;background:rgba(255,255,255,.08);color:#fff;font-size:.9rem}
+.dict-list{max-height:200px;overflow-y:auto;font-size:.85rem;color:rgba(255,255,255,.6);line-height:1.8}
+.dict-list .highlight{color:#ffd700;font-weight:600}
+.config-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:8px;margin-bottom:15px}
+.config-input{width:100%;padding:8px;text-align:center;border:2px solid rgba(255,255,255,.2);border-radius:6px;background:rgba(255,255,255,.1);color:#fff;font-weight:700;font-size:1.1rem;text-transform:uppercase}
+.config-input:focus{outline:none;border-color:#a8e6cf}
+.config-input.center{border-color:#ffd700;background:rgba(255,215,0,.1);font-size:1.3rem}
+.selection-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;margin-bottom:15px}
+.selection-petals{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-bottom:15px}
+.word-item[draggable="true"]{cursor:grab}
+.word-item[draggable="true"]:active{cursor:grabbing}
+.intake-section{background:rgba(255,215,0,.08);border:1px solid rgba(255,215,0,.2);border-radius:12px;padding:20px;margin-bottom:20px;max-width:1400px;width:100%}
+.intake-section h3{color:#ffd700;margin-bottom:10px}
+.intake-actions{display:flex;gap:10px;margin-top:10px;flex-wrap:wrap}
+.intake-status{margin-top:10px;padding:8px;border-radius:6px;font-size:.85rem}
+.intake-status.success{background:rgba(168,230,207,.15);border:1px solid rgba(168,230,207,.3);color:#a8e6cf}
+.intake-status.error{background:rgba(255,118,117,.15);border:1px solid rgba(255,118,117,.3);color:#ff7675}
+.intake-status.info{background:rgba(108,92,231,.15);border:1px solid rgba(108,92,231,.3);color:#a29bfe}
+</style>
+</head>
+<body>
+<h1>Blossom Planner</h1>
+
+<!-- Intake Section -->
+<div class="intake-section" id="intake-section">
+  <h3>🌸 Intake Today's Puzzle</h3>
+  <textarea id="intake-input" placeholder="Paste the 7 letters here (center + outer petals).&#10;Format: one letter per line, comma-separated, or space-separated.&#10;Example: D&#10;A&#10;E&#10;I&#10;L&#10;N&#10;R&#10;&#10;The first letter will be treated as the center."></textarea>
+  <div class="intake-actions">
+    <button onclick="intakeOnly()" class="btn-warning">📥 Load Letters</button>
+    <button onclick="clearIntake()" class="btn-secondary">Clear</button>
+  </div>
+  <div id="intake-status"></div>
+</div>
+
+<div class="container">
+  <section id="config-section">
+    <h2>Setup</h2>
+    <div class="input-group">
+      <input type="text" id="center-input" placeholder="Center letter" maxlength="1">
+      <button onclick="setCenter()">Set Center</button>
+    </div>
+    <div class="config-grid" id="outer-grid"></div>
+    <div class="input-group">
+      <button onclick="clearConfig()" class="btn-secondary">Clear</button>
+      <button onclick="clearAll()" class="btn-danger">Reset All</button>
+    </div>
+  </section>
+
+  <section id="word-section" style="flex:1.5">
+    <h2>Words</h2>
+    <div class="input-group" style="position:relative">
+      <input type="text" id="word-input" placeholder="Type a word...">
+      <button onclick="doAddWord()">Add</button>
+    </div>
+    <div id="suggestions" class="suggestions-box" style="display:none"></div>
+    <div id="word-list" class="selection-list">
+      <div class="selection-empty">No words added yet</div>
+    </div>
+    <button class="dict-toggle btn-secondary" onclick="toggleDictionary()">▾ Show Dictionary</button>
+    <div id="dict-panel" class="dict-panel">
+      <input type="text" class="dict-search" id="dict-search" placeholder="Search dictionary...">
+      <div id="dict-list" class="dict-list"></div>
+    </div>
+  </section>
+
+  <section id="selection-section" style="flex:1.5">
+    <h2>Selection</h2>
+    <div class="selection-petals" id="selection-petals"></div>
+    <div class="score-summary" id="score-summary">
+      <h3>Score Summary</h3>
+      <div id="score-details"></div>
+    </div>
+  </section>
+</div>
+
+<script>
+var state = {
+  center: '',
+  outer: ['', '', '', '', '', '', ''],
+  bonusCount: {},
+  words: [],
+  selection: {}
+};
+var dictionary = null;
+var availableWords = [];
+var wordInput = document.getElementById('word-input');
+var suggestionsBox = document.getElementById('suggestions');
+var activeSuggestion = -1;
+
+// Initialize
+(function init() {
+  // Setup outer letter inputs
+  var outerGrid = document.getElementById('outer-grid');
+  for (var i = 0; i < 7; i++) {
+    var input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'config-input';
+    input.maxLength = 1;
+    input.placeholder = ('P' + (i + 1));
+    input.dataset.outer = i;
+    input.addEventListener('input', function() {
+      state.outer[parseInt(this.dataset.outer)] = this.value.toUpperCase();
+      updateBonusCount();
+      renderSelection();
+    });
+    input.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        var idx = parseInt(this.dataset.outer);
+        if (idx === 0) setCenter();
+        else {
+          state.outer[idx] = this.value.toUpperCase();
+          updateBonusCount();
+          renderSelection();
+        }
+      }
+    });
+    outerGrid.appendChild(input);
+  }
+  setupWordInput();
+  loadDictionary();
+  renderWords();
+  renderSelection();
+})();
+
+function loadDictionary() {
+  fetch('/blossom-dictionary.txt')
+    .then(r => {
+      if (!r.ok) throw new Error('Failed to load');
+      return r.text();
+    })
+    .then(text => {
+      availableWords = text.split('\n').map(w => w.trim().toUpperCase()).filter(w => w.length > 0);
+      dictionary = new Set(availableWords);
+      console.log('Dictionary loaded: ' + availableWords.length + ' words');
+    })
+    .catch(e => console.error('Dictionary error:', e));
+}
+
+function setCenter() {
+  var val = document.getElementById('center-input').value.toUpperCase();
+  if (val) {
+    state.center = val;
+    state.outer[0] = val;
+    document.getElementById('outer-grid').querySelector('[data-outer="0"]').value = val;
+    updateBonusCount();
+    renderSelection();
+  }
+}
+
+function updateBonusCount() {
+  state.bonusCount = {};
+  for (var i = 0; i < state.outer.length; i++) {
+    var l = state.outer[i];
+    if (l) state.bonusCount[l] = (state.bonusCount[l] || 0) + 1;
+  }
+}
+
+function setupWordInput() {
+  wordInput.addEventListener('input', function() {
+    var q = this.value.toUpperCase().replace(/[^A-Z]/g, '');
+    if (q.length >= 2 && dictionary) {
+      showSuggestions(q);
+    } else {
+      suggestionsBox.style.display = 'none';
+      activeSuggestion = -1;
+    }
+  });
+
+  wordInput.addEventListener('keydown', function(e) {
+    var items = suggestionsBox.querySelectorAll('.suggestion-item');
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      activeSuggestion = Math.min(activeSuggestion + 1, items.length - 1);
+      updateSuggestionHighlight(items);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      activeSuggestion = Math.max(activeSuggestion - 1, 0);
+      updateSuggestionHighlight(items);
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (activeSuggestion >= 0 && items[activeSuggestion]) {
+        items[activeSuggestion].click();
+      } else {
+        doAddWord();
+      }
+    } else if (e.key === 'Escape') {
+      suggestionsBox.style.display = 'none';
+      activeSuggestion = -1;
+    }
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!suggestionsBox.contains(e.target) && e.target !== wordInput) {
+      suggestionsBox.style.display = 'none';
+      activeSuggestion = -1;
+    }
+  });
+}
+
+function updateSuggestionHighlight(items) {
+  for (var i = 0; i < items.length; i++) {
+    items[i].classList.toggle('active', i === activeSuggestion);
+  }
+}
+
+function showSuggestions(query) {
+  // Build allowed letter multiset from center + outer letters
+  var allowed = {};
+  if (state.center) allowed[state.center] = (allowed[state.center] || 0) + 1;
+  for (var i = 0; i < state.outer.length; i++) {
+    var l = state.outer[i];
+    if (l) allowed[l] = (allowed[l] || 0) + 1;
+  }
+  if (Object.keys(allowed).length === 0) {
+    suggestionsBox.style.display = 'none';
+    return;
+  }
+  
+  var matches = availableWords.filter(function(w) {
+    if (w.startsWith(query) === false) return false;
+    if (state.words.includes(w)) return false;
+    // Check word can actually be formed from allowed letters
+    var needed = {};
+    for (var j = 0; j < w.length; j++) {
+      needed[w[j]] = (needed[w[j]] || 0) + 1;
+    }
+    for (var c in needed) {
+      if (!allowed[c] || needed[c] > allowed[c]) return false;
+    }
+    return true;
+  }).slice(0, 10);
+  
+  if (matches.length === 0) {
+    suggestionsBox.style.display = 'none';
+    return;
+  }
+  var html = '';
+  for (var i = 0; i < matches.length; i++) {
+    var w = matches[i];
+    var bonusInfo = getBonusInfo(w);
+    html += '<div class="suggestion-item" data-word="' + w + '">';
+    html += w;
+    if (bonusInfo) html += '<span class="bonus-tag">+' + bonusInfo + ' bonus</span>';
+    html += '</div>';
+  }
+  suggestionsBox.innerHTML = html;
+  suggestionsBox.style.display = 'block';
+  activeSuggestion = -1;
+  var items = suggestionsBox.querySelectorAll('.suggestion-item');
+  for (var i = 0; i < items.length; i++) {
+    items[i].addEventListener('click', function() {
+      doAddWord(this.dataset.word);
+    });
+  }
+}
+
+function doAddWord(word) {
+  if (!word) word = wordInput.value.trim();
+  if (!word || typeof word !== 'string') {
+    console.log('Add failed: invalid word');
+    return false;
+  }
+  word = word.toUpperCase().trim();
+  if (state.words.includes(word)) {
+    alert(word + ' is already in the list!');
+    return false;
+  }
+  if (!dictionary || !dictionary.has(word)) {
+    alert(word + ' is not in the reference dictionary.');
+    return false;
+  }
+  if (!isValidBlossomWord(word)) {
+    alert(word + ' doesn\'t contain the center letter ' + state.center + '.');
+    return false;
+  }
+  state.words.push(word);
+  wordInput.value = '';
+  suggestionsBox.style.display = 'none';
+  renderWords();
+  return true;
+}
+
+function isValidBlossomWord(word) {
+  if (!state.center) return true;
+  return word.indexOf(state.center) !== -1;
+}
+
+function getBonusInfo(word) {
+  var count = 0;
+  for (var i = 0; i < word.length; i++) {
+    var c = word[i];
+    if (state.bonusCount[c]) count += state.bonusCount[c];
+  }
+  return count > 0 ? count : null;
+}
+
+function removeFromList(idx) {
+  var removedWord = state.words[idx];
+  // Remove from selection by value match
+  for (var key in state.selection) {
+    if (state.selection.hasOwnProperty(key)) {
+      for (var i = state.selection[key].length - 1; i >= 0; i--) {
+        if (state.selection[key][i].word === removedWord) {
+          state.selection[key].splice(i, 1);
+        }
+      }
+    }
+  }
+  state.words.splice(idx, 1);
+  renderWords();
+  renderSelection();
+}
+
+function clearAll() {
+  if (confirm('Clear everything?')) {
+    state.words = [];
+    state.selection = {};
+    state.center = '';
+    state.outer = ['', '', '', '', '', '', ''];
+    state.bonusCount = {};
+    wordInput.value = '';
+    document.getElementById('center-input').value = '';
+    var inputs = document.querySelectorAll('.config-input');
+    for (var i = 0; i < inputs.length; i++) inputs[i].value = '';
+    renderWords();
+    renderSelection();
+  }
+}
+
+function clearConfig() {
+  state.center = '';
+  state.outer = ['', '', '', '', '', '', ''];
+  state.bonusCount = {};
+  wordInput.value = '';
+  document.getElementById('center-input').value = '';
+  var inputs = document.querySelectorAll('.config-input');
+  for (var i = 0; i < inputs.length; i++) inputs[i].value = '';
+  renderSelection();
+}
+
+function renderWords() {
+  var container = document.getElementById('word-list');
+  if (state.words.length === 0) {
+    container.innerHTML = '<div class="selection-empty">No words added yet</div>';
+    return;
+  }
+  // Sort words by length (longer first) then alphabetically
+  var sortedWords = state.words.slice().sort(function(a, b) {
+    if (b.length !== a.length) return b.length - a.length;
+    return a.localeCompare(b);
+  });
+  var html = '';
+  for (var i = 0; i < sortedWords.length; i++) {
+    var w = sortedWords[i];
+    var originalIdx = state.words.indexOf(w);
+    var wordScore = getWordScore(w);
+    html += '<div class="word-item" draggable="true" data-index="' + originalIdx + '">';
+    html += '<span class="word-text">' + w + '</span>';
+    html += '<span class="score-tag">' + wordScore + 'pts</span>';
+    html += '<div class="word-actions">';
+    html += '<span class="delete-btn" data-type="list" data-index="' + originalIdx + '">✕</span>';
+    html += '</div>';
+    html += '</div>';
+  }
+  container.innerHTML = html;
+
+  // Attach drag start to word items
+  var items = container.querySelectorAll('.word-item');
+  for (var i = 0; i < items.length; i++) {
+    (function(item, idx) {
+      item.addEventListener('dragstart', function(e) {
+        e.dataTransfer.setData('text/plain', state.words[idx]);
+        e.dataTransfer.effectAllowed = 'move';
+        item.style.opacity = '0.5';
+      });
+      item.addEventListener('dragend', function() {
+        item.style.opacity = '1';
+      });
+    })(items[i], i);
+  }
+
+  // Click handler for word items
+  container.addEventListener('click', function(e) {
+    var target = e.target;
+    if (target.classList.contains('delete-btn') && target.dataset.type === 'list') {
+      removeFromList(parseInt(target.dataset.index));
+    } else {
+      var wordItem = target.closest('.word-item');
+      if (wordItem) {
+        addWordToNextSlot(parseInt(wordItem.dataset.index));
+      }
+    }
+  });
+}
+
+function getWordScore(word) {
+  var len = word.length;
+  return len <= 4 ? 1 : (len <= 5 ? 5 : len);
+}
+
+function addWordToNextSlot(wordIdx) {
+  var word = state.words[wordIdx];
+  // Find first empty slot
+  for (var i = 0; i < state.outer.length; i++) {
+    var letter = state.outer[i];
+    if (!letter) continue;
+    if (!state.selection[letter]) state.selection[letter] = [];
+    if (state.selection[letter].length >= 2) continue;
+    if (state.selection[letter].some(function(s) { return s.word === word; })) continue;
+    state.selection[letter].push({word: word, index: wordIdx});
+    renderSelection();
+    return;
+  }
+  alert('All slots are full!');
+}
+
+function removeFromSelection(letter, wordIdx) {
+  if (state.selection[letter]) {
+    for (var i = state.selection[letter].length - 1; i >= 0; i--) {
+      if (state.selection[letter][i].index === wordIdx) {
+        state.selection[letter].splice(i, 1);
+        break;
+      }
+    }
+  }
+  renderSelection();
+}
+
+function renderSelection() {
+  var container = document.getElementById('selection-petals');
+  var html = '';
+  var outerLetters = state.outer;
+  var uniqueOuter = [];
+  for (var i = 0; i < outerLetters.length; i++) {
+    if (outerLetters[i] && uniqueOuter.indexOf(outerLetters[i]) === -1) {
+      uniqueOuter.push(outerLetters[i]);
+    }
+  }
+  if (uniqueOuter.length === 0) {
+    container.innerHTML = '<div class="selection-empty">Set up letters above to see selection zones</div>';
+    document.getElementById('score-details').innerHTML = '';
+    return;
+  }
+  for (var p = 0; p < uniqueOuter.length; p++) {
+    var letter = uniqueOuter[p];
+    var sel = state.selection[letter] || [];
+    html += '<div class="petal-section">';
+    html += '<div class="petal-label">' + letter + '</div>';
+    html += '<div class="petal-slots">';
+    for (var slot = 0; slot < 2; slot++) {
+      if (slot < sel.length) {
+        html += '<div class="petal-slot filled" data-petal="' + letter + '" data-word-idx="' + sel[slot].index + '">';
+        html += '<span class="word-text">' + sel[slot].word + '</span>';
+        html += '<span class="delete-btn" data-type="selection" data-petal="' + letter + '" data-word-idx="' + sel[slot].index + '">✕</span>';
+        html += '</div>';
+      } else {
+        html += '<div class="petal-slot empty" data-petal="' + letter + '" data-word-idx="-1">';
+        html += '<span class="slot-placeholder">+ ' + letter + '</span>';
+        html += '</div>';
+      }
+    }
+    html += '</div></div>';
+  }
+  container.innerHTML = html;
+
+  // Click handler on petal slots (click word to remove, click slot to add word)
+  container.addEventListener('click', function(e) {
+    var deleteBtn = e.target.closest('.delete-btn');
+    if (deleteBtn && deleteBtn.dataset.type === 'selection') {
+      removeFromSelection(deleteBtn.dataset.petal, parseInt(deleteBtn.dataset.wordIdx));
+      return;
+    }
+    // Click on a slot (not the delete button) - try to add first unselected word
+    var slot = e.target.closest('.petal-slot');
+    if (slot && slot.classList.contains('empty')) {
+      // Find first unselected word
+      var selectedWords = new Set();
+      for (var key in state.selection) {
+        if (state.selection.hasOwnProperty(key)) {
+          for (var j = 0; j < state.selection[key].length; j++) {
+            selectedWords.add(state.selection[key][j].word);
+          }
+        }
+      }
+      for (var i = 0; i < state.words.length; i++) {
+        if (!selectedWords.has(state.words[i])) {
+          addWordToNextSlot(i);
+          break;
+        }
+      }
+    }
+  });
+
+  // Drag and drop on petal slots
+  container.addEventListener('dragover', function(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    var slot = e.target.closest('.petal-slot');
+    if (slot) slot.classList.add('drag-over');
+  });
+
+  container.addEventListener('dragleave', function(e) {
+    var slot = e.target.closest('.petal-slot');
+    if (slot) slot.classList.remove('drag-over');
+  });
+
+  container.addEventListener('drop', function(e) {
+    e.preventDefault();
+    var slot = e.target.closest('.petal-slot');
+    if (slot) {
+      slot.classList.remove('drag-over');
+      var letter = slot.dataset.petal;
+      var word = e.dataTransfer.getData('text/plain');
+      if (!word) return;
+      // Check if already in selection
+      if (state.selection[letter]) {
+        for (var i = 0; i < state.selection[letter].length; i++) {
+          if (state.selection[letter][i].word === word) return;
+        }
+      }
+      // Check slot count
+      if (!state.selection[letter]) state.selection[letter] = [];
+      if (state.selection[letter].length >= 2) return;
+      // Find word index
+      var idx = state.words.indexOf(word);
+      if (idx === -1) return;
+      state.selection[letter].push({word: word, index: idx});
+      renderSelection();
+    }
+  });
+
+  // Score summary
+  var totalScore = calculateScore();
+  document.getElementById('score-details').innerHTML = '<div class="score-display">Score: ' + totalScore + '</div>';
+}
+
+function calculateScore() {
+  var total = 0;
+  var bonusTotal = 0;
+  for (var key in state.selection) {
+    if (state.selection.hasOwnProperty(key)) {
+      var sel = state.selection[key];
+      for (var i = 0; i < sel.length; i++) {
+        var w = sel[i].word;
+        var len = w.length;
+        var wordScore = len <= 4 ? 1 : (len <= 5 ? 5 : len);
+        total += wordScore;
+        // Bonus
+        for (var j = 0; j < w.length; j++) {
+          if (state.bonusCount[w[j]]) bonusTotal += state.bonusCount[w[j]];
+        }
+        // Pangram
+        if (w.indexOf(state.center) !== -1) {
+          var hasAll = true;
+          var centerSet = new Set(state.center);
+          for (var k = 0; k < w.length; k++) centerSet.add(w[k]);
+          if (centerSet.size === state.center.length + state.outer.filter(function(l){return l;}).length) {
+            wordScore += 7;
+          }
+        }
+      }
+    }
+  }
+  total += bonusTotal;
+  var html = '<div class="score-display">Score: ' + total + '</div>';
+  html += '<div class="score-details">Base: ' + (total - bonusTotal) + ' | Bonus: <span>+' + bonusTotal + '</span></div>';
+  return total;
+}
+
+function toggleDictionary() {
+  var panel = document.getElementById('dict-panel');
+  panel.classList.toggle('open');
+  if (panel.classList.contains('open')) {
+    renderDictionary();
+  }
+}
+
+function renderDictionary(filter) {
+  filter = filter || '';
+  var container = document.getElementById('dict-list');
+  var filtered = filter ? availableWords.filter(function(w) { return w.includes(filter.toUpperCase()); }) : availableWords;
+  var html = '';
+  for (var i = 0; i < Math.min(filtered.length, 100); i++) {
+    if (filter) {
+      var idx = filtered[i].indexOf(filter.toUpperCase());
+      html += filtered[i].substring(0, idx) + '<span class="highlight">' + filtered[i].substring(idx, idx + filter.length) + '</span>' + filtered[i].substring(idx + filter.length) + '<br>';
+    } else {
+      html += filtered[i] + '<br>';
+    }
+  }
+  if (filtered.length > 100) html += '...and ' + (filtered.length - 100) + ' more';
+  container.innerHTML = html;
+}
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && document.activeElement === wordInput) {
+    doAddWord();
+  }
+});
+
+document.getElementById('dict-search') && (document.getElementById('dict-search').oninput = function() {
+  renderDictionary(this.value);
+});
+
+// ==================== INTAKE FUNCTIONS ====================
+
+function showIntakeStatus(msg, type) {
+  var statusEl = document.getElementById('intake-status');
+  statusEl.innerHTML = '<div class="intake-status ' + type + '">' + msg + '</div>';
+  setTimeout(function() { statusEl.innerHTML = ''; }, 5000);
+}
+
+function parseLetters(text) {
+  // Extract all uppercase letters from the input
+  text = text.toUpperCase();
+  var matches = text.match(/[A-Z]/g);
+  if (!matches || matches.length < 7) return null;
+  var unique = [];
+  for (var i = 0; i < matches.length; i++) {
+    if (unique.indexOf(matches[i]) === -1) {
+      unique.push(matches[i]);
+      if (unique.length === 7) break;
+    }
+  }
+  return unique;
+}
+
+function intakeOnly() {
+  var input = document.getElementById('intake-input').value.trim();
+  if (!input) { showIntakeStatus('Please paste the letters first.', 'error'); return; }
+  
+  var letters = parseLetters(input);
+  if (!letters) { showIntakeStatus('Need 7 unique letters.', 'error'); return; }
+  
+  state.center = letters[0];
+  for (var i = 1; i < Math.min(letters.length, 7); i++) {
+    state.outer[i - 1] = letters[i];
+  }
+  document.getElementById('center-input').value = state.center;
+  var inputs = document.querySelectorAll('#outer-grid .config-input');
+  for (var i = 0; i < inputs.length; i++) {
+    inputs[i].value = state.outer[i] || '';
+  }
+  updateBonusCount();
+  renderSelection();
+  showIntakeStatus('✅ Loaded ' + letters.length + ' letters. Center: ' + state.center + '. Add words manually below.', 'success');
+}
+
+function intakeAndFindWords() {
+  var input = document.getElementById('intake-input').value.trim();
+  if (!input) { showIntakeStatus('Please paste the letters first.', 'error'); return; }
+  
+  var letters = parseLetters(input);
+  if (!letters) { showIntakeStatus('Need 7 unique letters.', 'error'); return; }
+  
+  state.center = letters[0];
+  for (var i = 1; i < Math.min(letters.length, 7); i++) {
+    state.outer[i - 1] = letters[i];
+  }
+  document.getElementById('center-input').value = state.center;
+  var inputs = document.querySelectorAll('#outer-grid .config-input');
+  for (var i = 0; i < inputs.length; i++) {
+    inputs[i].value = state.outer[i] || '';
+  }
+  updateBonusCount();
+  
+  if (!dictionary) { showIntakeStatus('Dictionary still loading...', 'error'); return; }
+  
+  // Find all valid words
+  var foundWords = [];
+  for (var i = 0; i < availableWords.length; i++) {
+    var w = availableWords[i];
+    if (w.indexOf(state.center) === -1) continue;
+    var allAllowed = true;
+    for (var j = 0; j < w.length; j++) {
+      if (letters.indexOf(w[j]) === -1) { allAllowed = false; break; }
+    }
+    if (!allAllowed) continue;
+    foundWords.push(w);
+  }
+  
+  foundWords.sort(function(a, b) {
+    if (b.length !== a.length) return b.length - a.length;
+    return a.localeCompare(b);
+  });
+  
+  state.words = foundWords;
+  renderWords();
+  renderSelection();
+  showIntakeStatus('✅ Loaded ' + letters.length + ' letters (center: ' + state.center + '). Found ' + foundWords.length + ' valid words — click any word to add to selection.', 'success');
+}
+
+function clearIntake() {
+  document.getElementById('intake-input').value = '';
+  document.getElementById('intake-status').innerHTML = '';
+}
+</script>
+</body>
+</html>
