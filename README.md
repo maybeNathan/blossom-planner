@@ -1,35 +1,36 @@
 # Blossom Planner
 
-A word game helper for [Merriam-Webster's Blossom](https://www.merriam-webster.com/games/blossom-word-game). Paste today's letters, find words, and plan your selection.
+A helper for [Merriam-Webster's Blossom](https://www.merriam-webster.com/games/blossom-word-game), the daily word puzzle.
 
-## Features
+## What it does
 
-- **One-tap puzzle intake** — paste the 7 letters, everything auto-fills
-- **Dictionary search** — browse all valid words, filtered to ones you can actually make
-- **Petal-based selection** — drag words into petal slots for optimal scoring
-- **Live scoring** — see your total with bonuses and pangrams in real-time
-- **Bonus tracking** — mark petal bonuses and track pangrams
+Blossom gives you 7 letters (center + 6 petals) and you need to find 12 words. This app lets you:
+
+- Paste today's 7 letters once and have everything auto-populate
+- Search the full dictionary for valid words you can form
+- Organize words into petal slots for optimal scoring
+- See your total score with live updates
 
 ## How to use
 
 1. Open the app
-2. Paste the 7 letters from today's puzzle (center letter first, then outer petals)
-3. Click **Load Letters** — the puzzle grid auto-fills
-4. Search words by typing or browsing the dictionary
+2. Paste the 7 letters into the textarea (center first, then petals)
+3. Click **Load Letters** — the grid auto-fills
+4. Type in the word search to filter, or browse the dictionary
 5. Click a word to add it to the next available petal slot
-6. Build your selection and watch your score update
+6. Build your selection and track your score
 
 ## Scoring
 
-| Length | Points |
-|--------|--------|
+| Word length | Points |
+|-------------|--------|
 | 4 | 2 |
 | 5 | 4 |
 | 6 | 6 |
 | 7 | 12 |
 | 8+ | 12 + 3 per extra letter |
 
-- **Bonus petal**: +5 per use
+- **Bonus petal**: +5 each use
 - **Pangram** (all 7 letters): +7 bonus
 
 ## Setup
@@ -42,8 +43,8 @@ Then open `http://localhost:6142`.
 
 ## Files
 
-- `blossom.html` — Single-file app, no dependencies
-- `server.py` — Simple Python HTTP server
+- `blossom.html` — Single-file app (HTML + CSS + JS, no dependencies)
+- `server.py` — Python HTTP server
 - `blossom-dictionary.txt` — Valid word dictionary
 
 ## License
